@@ -1,0 +1,48 @@
+# documentation: https://docs.wavelog.org/
+# slogan: Self-hosted web logbook for ham radio operators.
+# category: productivity
+# tags: hamradio, logbook, radio, qso
+# logo: svgs/wavelog.svg
+# port: 80
+
+services:
+  wavelog:
+    image: ghcr.io/wavelog/wavelog:latest
+    environment:
+      - CI_ENV=docker
+      - SERVICE_FQDN_WAVELOG
+      - PHP_MEMORY_LIMIT=${PHP_MEMORY_LIMIT:-256M}
+      - PHP_MAX_EXECUTION_TIME=${PHP_MAX_EXECUTION_TIME:-600}
+      - PHP_UPLOAD_MAX_FILESIZE=${PHP_UPLOAD_MAX_FILESIZE:-64M}
+      - PHP_POST_MAX_SIZE=${PHP_POST_MAX_SIZE:-64M}
+    volumes:
+      - wavelog-config:/var/www/html/application/config/docker
+      - wavelog-uploads:/var/www/html/uploads
+      - wavelog-userdata:/var/www/html/userdata
+    depends_on:
+      wavelog-db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    restart: unless-stopped
+
+  wavelog-db:
+    image: mariadb:11.8
+    environment:
+      - MARIADB_RANDOM_ROOT_PASSWORD=yes
+      - MARIADB_DATABASE=wavelog
+      - MARIADB_USER=${SERVICE_USER_WAVELOGDB}
+      - MARIADB_PASSWORD=${SERVICE_PASSWORD_WAVELOGDB}
+    volumes:
+      - wavelog-dbdata:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
