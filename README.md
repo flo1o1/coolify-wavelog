@@ -1,4 +1,4 @@
-# coolify-wavelog
+# Coolify Template for Wavelog (Ham Radio Logbook)
 
 ![Wavelog](images/wavelog-logo.svg)
 
